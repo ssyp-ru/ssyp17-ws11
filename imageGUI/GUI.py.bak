@@ -1,0 +1,173 @@
+import sys
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QMessageBox, QMainWindow, QDialogButtonBox, QGridLayout, QLineEdit, QLabel, QCheckBox, QFileDialog, QDialog
+from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtCore import Qt, QMetaObject, QCoreApplication, QObject
+from libImage import doAll
+import threading
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+class ui(QMainWindow):
+    valarr = {"binarization": False, "skelet1": False, "skelet2": False, "key1": False, "key2": False, "separate": False, "edges": True}
+    def __init__(self):
+        super().__init__()
+        self.initUi()
+    def initUi(self):
+        self.grid = QGridLayout()
+        self.wdg = QWidget()
+        self.wdg.setLayout(self.grid)
+
+        self.setCentralWidget(self.wdg)
+        self.filename = QLabel("Выберите файл")
+
+        self.filebtn = QPushButton("Обзор")
+        self.filebtn.clicked.connect(self.fileSelect)
+
+        self.setbtn = QPushButton("Настройки")
+        self.setbtn.clicked.connect(self.settings)
+
+        self.startbtn = QPushButton("Начать")
+        self.startbtn.setEnabled(False)
+        self.startbtn.clicked.connect(self.startProcessing)
+
+        self.img = QLabel()
+        self.img.setAlignment(Qt.AlignCenter)
+
+        self.output = QLineEdit()
+        self.output.setReadOnly(True)
+        self.output.setText("Здесь будет распознанный текст")
+
+        self.grid.addWidget(self.filename, 1, 0, 1, 1)
+        self.grid.addWidget(self.filebtn, 1, 1, 1, 1)
+        self.grid.addWidget(self.img, 2, 0, 1, 2)
+        self.grid.addWidget(self.startbtn, 3, 0, 1, 1)
+        self.grid.addWidget(self.setbtn, 3, 1, 1, 1)
+        self.grid.addWidget(self.output, 4, 0, 1, 2)
+
+        self.statusBar()
+        self.setWindowIcon(QIcon("icon.png"))
+        self.setGeometry(150, 150, 300, 200)
+        self.setWindowTitle("Распознователь изображений")
+        self.show()
+
+    def fileSelect(self):
+        file = QFileDialog.getOpenFileName(self, "Выбрать файл", "/home/ilya/картинки/", "Изображение (*.png)")[0]
+        if file == "":
+            self.startbtn.setEnabled(False)
+            self.img.setPixmap(QPixmap())
+            self.filename.setText("Выберите файл")
+        else:
+            pixmap = QPixmap(file)
+            pixmap = pixmap.scaled(int((pixmap.width() / pixmap.height()) * 250), 250)
+            self.img.setPixmap(pixmap)
+            self.filename.setText(file)
+            self.startbtn.setEnabled(True)
+    def settings(self):
+        dlg = setD(self.valarr.copy())
+        if dlg.exec_() == 1:
+            self.valarr = dlg.getValues()
+        print(self.valarr)
+
+    def startProcessing(self):
+        self.startbtn.setEnabled(False)
+        self.setbtn.setEnabled(False)
+        self.filebtn.setEnabled(False)
+        self.thr = threading.Thread(target=doAll, args=(self.filename.text(),self, self.valarr))
+        self.thr.start()
+        #doAll(self.filename.text(),self)
+        #self.startbtn.setEnabled(True)
+        #self.setbtn.setEnabled(True)
+        #self.filebtn.setEnabled(True)
+    def endProcessing(self):
+        self.startbtn.setEnabled(True)
+        self.setbtn.setEnabled(True)
+        self.filebtn.setEnabled(True)
+
+
+
+
+class Ui_saveDialog(object):
+    def setupUi(self, saveDialog, valarr):
+        #self.valarr = {"binarization": 0, "skelet1": 0, "skelet2": 0, "key1": 0, "key2": 0, "separate": 0, "edges": 0}
+        self.valarr = valarr
+        saveDialog.setObjectName("saveDialog")
+        saveDialog.resize(311, 293)
+        self.gridLayout = QtWidgets.QGridLayout(saveDialog)
+        self.gridLayout.setObjectName("gridLayout")
+        self.widget = QtWidgets.QWidget(saveDialog)
+        self.widget.setObjectName("widget")
+        self.gridLayout_2 = QtWidgets.QGridLayout(self.widget)
+        self.gridLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout_2.setObjectName("gridLayout_2")
+        self.separate = QtWidgets.QCheckBox(self.widget)
+        self.separate.setObjectName("separate")
+        self.gridLayout_2.addWidget(self.separate, 5, 0, 1, 1)
+        self.skelet1 = QtWidgets.QCheckBox(self.widget)
+        self.skelet1.setObjectName("skelet1")
+        self.gridLayout_2.addWidget(self.skelet1, 1, 0, 1, 1)
+        self.binarization = QtWidgets.QCheckBox(self.widget)
+        self.binarization.setObjectName("binarization")
+        self.gridLayout_2.addWidget(self.binarization, 0, 0, 1, 1)
+        self.key2 = QtWidgets.QCheckBox(self.widget)
+        self.key2.setObjectName("key2")
+        self.gridLayout_2.addWidget(self.key2, 4, 0, 1, 1)
+        self.skelet2 = QtWidgets.QCheckBox(self.widget)
+        self.skelet2.setObjectName("skelet2")
+        self.gridLayout_2.addWidget(self.skelet2, 2, 0, 1, 1)
+        self.key1 = QtWidgets.QCheckBox(self.widget)
+        self.key1.setObjectName("key1")
+        self.gridLayout_2.addWidget(self.key1, 3, 0, 1, 1)
+        self.edges = QtWidgets.QCheckBox(self.widget)
+        self.edges.setObjectName("edges")
+        self.gridLayout_2.addWidget(self.edges, 6, 0, 1, 1)
+        self.gridLayout.addWidget(self.widget, 0, 0, 1, 1)
+        self.buttonBox = QtWidgets.QDialogButtonBox(saveDialog)
+        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setObjectName("buttonBox")
+        self.gridLayout.addWidget(self.buttonBox, 1, 0, 1, 1)
+
+        self.binarization.setChecked(self.valarr["binarization"])
+        self.skelet1.setChecked(self.valarr["skelet1"])
+        self.skelet2.setChecked(self.valarr["skelet2"])
+        self.key1.setChecked(self.valarr["key1"])
+        self.key2.setChecked(self.valarr["key2"])
+        self.separate.setChecked(self.valarr["separate"])
+        self.edges.setChecked(self.valarr["edges"])
+
+        self.retranslateUi(saveDialog)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+
+        self.binarization.stateChanged.connect(self.changeValue)
+        self.skelet1.stateChanged.connect(self.changeValue)
+        self.skelet2.stateChanged.connect(self.changeValue)
+        self.key1.stateChanged.connect(self.changeValue)
+        self.key2.stateChanged.connect(self.changeValue)
+        self.separate.stateChanged.connect(self.changeValue)
+        self.edges.stateChanged.connect(self.changeValue)
+
+
+        QtCore.QMetaObject.connectSlotsByName(saveDialog)
+    def retranslateUi(self, saveDialog):
+        _translate = QtCore.QCoreApplication.translate
+        saveDialog.setWindowTitle(_translate("saveDialog", "Сохранять после"))
+        self.separate.setText(_translate("saveDialog", "выделения точек изгиба"))
+        self.skelet1.setText(_translate("saveDialog", "1 скелетизации"))
+        self.binarization.setText(_translate("saveDialog", "бинаризации"))
+        self.key2.setText(_translate("saveDialog", "объединения ключевых точек"))
+        self.skelet2.setText(_translate("saveDialog", "2 скелетизации"))
+        self.key1.setText(_translate("saveDialog", "выделения ключевых точек"))
+        self.edges.setText(_translate("saveDialog", "выделения рёбер"))
+    def changeValue(self, state):
+        name = self.sender()
+        self.valarr[name.objectName()] = bool(state)
+
+    def accepted(self):
+        print("cfghjk")
+
+class setD(QDialog, Ui_saveDialog):
+    def __init__(self,vallarr ,parent=None):
+        QDialog.__init__(self, parent)
+        self.setupUi(self, vallarr)
+
+    def getValues(self):
+        return self.valarr
